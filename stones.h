@@ -1,7 +1,7 @@
 #ifndef STONES_H
 #define STONES_H
 
-class Point { //точка в 3Д пространстве
+class Point { //С‚РѕС‡РєР° РІ 3Р” РїСЂРѕСЃС‚СЂР°РЅСЃС‚РІРµ
 public:
 	float x, y, h;
 	Point (float x = 0, float y = 0, float h = 0);
@@ -17,10 +17,10 @@ public:
 	Point normalize() const;
 };
 
-class Face { //треугольная грань в 3Д пространстве
+class Face { //С‚СЂРµСѓРіРѕР»СЊРЅР°СЏ РіСЂР°РЅСЊ РІ 3Р” РїСЂРѕСЃС‚СЂР°РЅСЃС‚РІРµ
 private:
-	float a, b, c; //к-ты уравнения плоскости
-	bool abc_def; //заданы ли к-ты
+	float a, b, c; //Рє-С‚С‹ СѓСЂР°РІРЅРµРЅРёСЏ РїР»РѕСЃРєРѕСЃС‚Рё
+	bool abc_def; //Р·Р°РґР°РЅС‹ Р»Рё Рє-С‚С‹
 	void defABC();
 public:
 	Point * p[3];
@@ -39,29 +39,39 @@ public:
 	const std::vector<Face> &faces() const;
 };
 
-class Unit { //Растр
+class Unit { //Р Р°СЃС‚СЂ
 public:
-	static float step; //расстояние между соседними растрами
-	float x, y, h; //координаты центра
-	float vol, deg; //объем и качество растра
+	static float step; //СЂР°СЃСЃС‚РѕСЏРЅРёРµ РјРµР¶РґСѓ СЃРѕСЃРµРґРЅРёРјРё СЂР°СЃС‚СЂР°РјРё
+	float x, y, h; //РєРѕРѕСЂРґРёРЅР°С‚С‹ С†РµРЅС‚СЂР°
+	float vol, deg; //РѕР±СЉРµРј Рё РєР°С‡РµСЃС‚РІРѕ СЂР°СЃС‚СЂР°
 	Unit();
 	Unit(float, float, float);
 	Unit(int, int, int);
 };
 
-class Grid { //Набор растров
+class Grid { //РќР°Р±РѕСЂ СЂР°СЃС‚СЂРѕРІ
 public:
-	float unitStep; //шаг между растрами
-	int nx, ny, nh; //измерения
+	float unitStep; //С€Р°Рі РјРµР¶РґСѓ СЂР°СЃС‚СЂР°РјРё
+	int nx, ny, nh; //РёР·РјРµСЂРµРЅРёСЏ
 	Unit*** u;
 };
 
-class Deposit { //Месторождение в целом
+class Deposit { //РњРµСЃС‚РѕСЂРѕР¶РґРµРЅРёРµ РІ С†РµР»РѕРј
 public:
-	void buildSurface();
+	/* 
+	 * auto faces = surface->faces();
+	 * for (auto face : faces) {
+	 *   // do anything
+	 * }
+	 */
 	void buildGrid();
-	void buildCut(float, float, float); //поперечное сечение вертикальной плоскостью, проходящей через прямую, заданную уравнением
-	Deposit();
+	void buildCut(float, float, float); //РїРѕРїРµСЂРµС‡РЅРѕРµ СЃРµС‡РµРЅРёРµ РІРµСЂС‚РёРєР°Р»СЊРЅРѕР№ РїР»РѕСЃРєРѕСЃС‚СЊСЋ, РїСЂРѕС…РѕРґСЏС‰РµР№ С‡РµСЂРµР· РїСЂСЏРјСѓСЋ, Р·Р°РґР°РЅРЅСѓСЋ СѓСЂР°РІРЅРµРЅРёРµРј
+	
+	/*
+	 * DeluanayTriangulation deluanayTriangulation(&tochki);
+	 * Surface *surface = new Surface(deluanayTriangulation.compute());
+	 */
+	Deposit(/*.. tochlki ...*/);
 private:
 	float max_x, max_y;
 	Surface *sf;
