@@ -9,8 +9,23 @@
 #include <vector>
 #include <set>
 
+#define EPSILON (1e-9)
+#define EQUALS(a, b) (abs(a - b) < EPSILON)
+#define BETWEEN(x, l, r) (x > l - EPSILON && x < r + EPSILON)
+
 struct Point
 {
+    enum class Classification
+    {
+        Left,
+        Right,
+        Between,
+        InFront,
+        InBack,
+        Begin,
+        End
+    };
+
     double x, y;
 
     Point operator - (const Point &p) const
@@ -43,26 +58,62 @@ struct Point
         return x * a.y - y * a.x;
     }
 
+    double scalar(const Point &a) const
+    {
+        return x * a.x + y * a.y;
+    }
+
     bool operator < (const Point &p) const
     {
-        return y < p.y || (y == p.y && x < p.x);
+        return x < p.x || (x == p.x && y < p.y);
     }
 
     bool operator > (const Point &p) const
     {
-        return y > p.y || (y == p.y && x > p.x);
+        return x > p.x || (x == p.x && y > p.y);
+    }
+
+    bool operator == (const Point &p) const
+    {
+        return EQUALS(distance(p), 0);
+    }
+
+    double length() const
+    {
+        return std::sqrt(x * x - y * y);
+    }
+
+    Classification classify(const Point &begin, const Point &end) const
+    {
+        Point v1 = end - begin;
+        Point v2 = *this - begin;
+        double f = v1.x * v2.y - v1.y * v2.x;
+        if (f > 0.0)
+            return Classification::Left;
+        if (f < 0.0)
+            return Classification::Right;
+        if (v1.x * v2.x < 0.0 || v1.y * v2.y < 0.0)
+            return Classification::InBack;
+        if (v1.length() < v2.length())
+            return Classification::InFront;
+        if (*this == begin)
+            return Classification::Begin;
+        if (*this == end)
+            return Classification::End;
+        return Classification::Between;
     }
 };
 
 namespace triangulation
 {
-    struct Edge
+    struct FrontierEdge
     {
         Point *first, *second;
 
-        Edge (Point *first, Point *second);
+        FrontierEdge(Point *first, Point *second);
+        bool operator<(const FrontierEdge &e) const;
+
         void flip();
-        bool operator<(const Edge &e) const;
     };
 
     struct Segment
@@ -70,7 +121,7 @@ namespace triangulation
         Point begin, end;
 
         Segment rotate() const;
-        bool intersect(const Segment &s, double t) const;
+        bool intersect(const Segment &s, double &t) const;
     };
 
     struct Triangle
@@ -92,18 +143,8 @@ namespace triangulation
         std::vector<Triangle> compute();
 
     protected:
-        enum class Classification
-        {
-            Left,
-            Right,
-            Between,
-            OutsideLine,
-            Error
-        };
-        Classification classify(const Point &a, const Point &begin, const Point &end) const;
-
-        Edge findHullEdge() const;
-        bool findMatePoint(const Edge &e, Point *&res) const;
+        FrontierEdge findHullEdge() const;
+        bool findMatePoint(const FrontierEdge &e, Point *&res) const;
     };
 }
 
