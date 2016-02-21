@@ -9,10 +9,6 @@
 #include <vector>
 #include <set>
 
-#define EPSILON (1e-9)
-#define EQUALS(a, b) (abs(a - b) < EPSILON)
-#define BETWEEN(x, l, r) (x > l - EPSILON && x < r + EPSILON)
-
 struct Point
 {
     double x, y;
@@ -20,6 +16,21 @@ struct Point
     Point operator - (const Point &p) const
     {
         return {x - p.x, y - p.y};
+    }
+
+    Point operator + (const Point &p) const
+    {
+        return {x + p.x, y + p.y};
+    }
+
+    Point operator * (double alpha) const
+    {
+        return {x * alpha, y * alpha};
+    }
+
+    Point inv() const
+    {
+        return {-y, x};
     }
 
     double distance(const Point &a) const
@@ -34,42 +45,37 @@ struct Point
 
     bool operator < (const Point &p) const
     {
-        return y < p.y || (EQUALS(y, p.y) && x < p.x);
+        return y < p.y || (y == p.y && x < p.x);
     }
 
-
+    bool operator > (const Point &p) const
+    {
+        return y > p.y || (y == p.y && x > p.x);
+    }
 };
 
 namespace triangulation
 {
-    enum class Classification
-    {
-        Left,
-        Right,
-        Between,
-        OutsideLine,
-        Error
-    };
-
     struct Edge
     {
-        size_t first;
-        size_t second;
+        Point *first, *second;
 
-        void flip()
-        {
-            std::swap(first, second);
-        }
+        Edge (Point *first, Point *second);
+        void flip();
+        bool operator<(const Edge &e) const;
+    };
 
-        bool operator<(const Edge &e) const
-        {
-            return first < e.first || (first == e.first && second < e.second);
-        }
+    struct Segment
+    {
+        Point begin, end;
+
+        Segment rotate() const;
+        bool intersect(const Segment &s, double t) const;
     };
 
     struct Triangle
     {
-        int a, b, c;
+        Point *a, *b, *c;
     };
 
     class DeluanayTriangulation
@@ -79,13 +85,25 @@ namespace triangulation
         std::vector<Point> *m_points;
         std::vector<size_t> index;
 
-        Edge hullEdge();
-        Classification classify(const Point &a, const Point &begin, const Point &end) const;
     public:
         DeluanayTriangulation(std::vector<Point> *points);
         virtual ~DeluanayTriangulation();
 
         std::vector<Triangle> compute();
+
+    protected:
+        enum class Classification
+        {
+            Left,
+            Right,
+            Between,
+            OutsideLine,
+            Error
+        };
+        Classification classify(const Point &a, const Point &begin, const Point &end) const;
+
+        Edge findHullEdge() const;
+        bool findMatePoint(const Edge &e, Point *&res) const;
     };
 }
 
