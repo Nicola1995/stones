@@ -12,18 +12,13 @@ DeluanayTriangulation::DeluanayTriangulation(std::vector<Point> *points)
     n = m_points->size();
 }
 
-DeluanayTriangulation::~DeluanayTriangulation()
-{
-
-}
-
 std::vector<Triangle> DeluanayTriangulation::compute()
 {
     std::vector<Triangle> triangles;
     std::set<FrontierEdge> frontier;
 
     auto updateFrontier = [&] (Point *begin, Point *end) {
-        FrontierEdge e(begin, end);
+        FrontierEdge e = {begin, end};
         auto it = frontier.find(e);
         if (it != frontier.end())
             frontier.erase(it);
@@ -49,21 +44,17 @@ std::vector<Triangle> DeluanayTriangulation::compute()
 
 FrontierEdge DeluanayTriangulation::findHullEdge() const
 {
-    size_t base = 0;
-    for (size_t i = 0; i < n; i++) {
-        if (m_points->at(i) < m_points->at(base))
-            base = i;
-    }
+    size_t base = std::min_element(m_points->begin(), m_points->end()) - m_points->begin();
+    size_t leftmost = (base + 1) % n;
+    size_t candidate = (leftmost + 1) % n;
 
-    std::swap(m_points->at(0), m_points->at(base));
-    size_t leftmost = 1;
-    for (size_t i = 2; i < n; i++) {
-        Point::Classification c = m_points->at(i).classify(m_points->at(0), m_points->at(leftmost));
-        if (c == Point::Classification::Left || c == Point::Classification::Between)
+    for (size_t i = candidate; i != base; i = (i + 1) % n) {
+        Classification c = classify(m_points->at(i), m_points->at(base), m_points->at(leftmost));
+        if (c == Classification::Left || c == Classification::Between)
             leftmost = i;
     }
 
-    return FrontierEdge(&m_points->at(0), &m_points->at(leftmost));
+    return {&m_points->at(base), &m_points->at(leftmost)};
 }
 
 bool DeluanayTriangulation::findMatePoint(const FrontierEdge &e, Point *&res) const
@@ -75,7 +66,7 @@ bool DeluanayTriangulation::findMatePoint(const FrontierEdge &e, Point *&res) co
     Segment inv = {*e.first, *e.second};
     inv = inv.rotate();
     for (size_t i = 0; i < n; i++) {
-        if (m_points->at(i).classify(*e.first, *e.second) == Point::Classification::Right) {
+        if (classify(m_points->at(i), *e.first, *e.second) == Classification::Right) {
             Segment seg = {*e.second, m_points->at(i)};
             seg = seg.rotate();
             if (inv.intersect(seg, value) && value < best_value) {
@@ -112,7 +103,7 @@ bool Segment::intersect(const Segment &s, double &t) const
 
 Segment Segment::rotate() const
 {
-    Point inv = (begin - end).inv();
+    Point inv = (end - begin).inv();
     Point center = (begin + end) * 0.5;
     return {center - inv * 0.5, center + inv * 0.5};
 }
@@ -121,11 +112,6 @@ Segment Segment::rotate() const
 // FrontierEdge
 //
 
-FrontierEdge::FrontierEdge(Point *first, Point *second)
-        : first(first), second(second)
-{
-}
-
 void FrontierEdge::flip()
 {
     std::swap(first, second);
@@ -133,5 +119,29 @@ void FrontierEdge::flip()
 
 bool FrontierEdge::operator<(const FrontierEdge &e) const
 {
-    return std::make_pair(*first, *second) < std::make_pair(*e.first, *e.second);
+    return std::make_pair(*second, *first) < std::make_pair(*e.second, *e.first);
+}
+
+//
+// Classification
+//
+
+Classification triangulation::classify(const Point &p, const Point &begin, const Point &end)
+{
+    Point v1 = end - begin;
+    Point v2 = p - begin;
+    double f = v1.x * v2.y - v1.y * v2.x;
+    if (f > 0.0)
+        return Classification::Left;
+    if (f < 0.0)
+        return Classification::Right;
+    if (v1.x * v2.x < 0.0 || v1.y * v2.y < 0.0)
+        return Classification::InBack;
+    if (v1.length() < v2.length())
+        return Classification::InFront;
+    if (p == begin)
+        return Classification::Begin;
+    if (p == end)
+        return Classification::End;
+    return Classification::Between;
 }

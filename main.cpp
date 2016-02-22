@@ -49,38 +49,16 @@ void display(void)
 int main(int argc, char **args)
 {
     /*
-     * Usage
-     */
-    triangulation::Segment s1 = {{4, 4}, {6, 6}};
-    triangulation::Segment s2 = {{2, 4}, {2, 0}};
-    double param = 0.0;
-    bool intersect = s1.intersect(s2, param);
-    std::cout << intersect << " " << param << std::endl;
-
-    double scalar = (s2.end - s2.begin).inv().scalar(s1.end - s1.begin);
-    double num = (s2.end - s2.begin).inv().scalar(s1.begin - s2.begin);
-    std::cout << "scalar = " << scalar << std::endl;
-    std::cout << "num = " << num << std::endl;
-
-    s2 = s2.rotate();
-    std::cout << s2.begin.x << " " << s2.begin.y << std::endl;
-    std::cout << s2.end.x << " " << s2.end.y << std::endl;
-
-
-    /*
      * Triangulation
      */
     std::srand(std::time(0));
-    for (int i = 0; i < 100; i++) {
+    points.clear();
+    for (int i = 0; i < 1000; i++) {
         points.push_back({std::rand() % 600 - 300, std::rand() % 600 - 300});
     }
 
     triangulation::DeluanayTriangulation deluanayTriangulation(&points);
     triangles = deluanayTriangulation.compute();
-    std::cout << triangles.size() << std::endl;
-    for (auto triangle : triangles) {
-        std::cout << triangle.a->x << " " << triangle.a->y << std::endl;
-    }
 
     /*
      * Simple output
