@@ -54,6 +54,7 @@ public:
 	float unitStep; //шаг между растрами
 	int nx, ny, nh; //измерения
 	Unit*** u;
+	void build(Surface *);
 };
 
 class Deposit { //Месторождение в целом
